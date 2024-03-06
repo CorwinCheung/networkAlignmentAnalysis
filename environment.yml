@@ -18,4 +18,6 @@ dependencies:
   - tqdm
   - ipykernel
   - pip:
-    - tensorboard
+    - wandb
+    - black
+    - gitignore_parser
