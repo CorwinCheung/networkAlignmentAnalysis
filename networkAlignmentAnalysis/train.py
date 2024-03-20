@@ -10,6 +10,7 @@ from networkAlignmentAnalysis.utils import (transpose_list,
                                             save_checkpoint)
 
 
+
 @train_nets
 def train(nets, optimizers, dataset, **parameters):
     """method for training network on supervised learning problem"""
@@ -184,6 +185,57 @@ def get_dropout_indices(idx_alignment, fraction):
     idx_rand = [torch.stack([torch.randperm(nodes)[:drop] for _ in range(num_nets)], dim=0) 
                 for nodes, drop in zip(num_nodes, num_drop)]
     return idx_high, idx_low, idx_rand
+
+@torch.no_grad()
+@test_nets
+def dropout_analyze(nets, dataset, alignment=None, **parameters):
+    """
+    returns the nets after dropping out the eigenvectors
+    Then the nets can be run through the testing and a confusion matrix and the confidence of the
+    estimates can be printed out
+    """
+    fraction = parameters.get('dropout_fraction')
+    alignment = [torch.mean(align, dim=1) for align in alignment]
+    idx_alignment = [torch.argsort(align, dim=1) for align in alignment]
+    by_layer = parameters.get('by_layer', False)
+    idx_dropout_layers = nets[0].get_alignment_layer_indices() 
+    num_layers = len(idx_dropout_layers) if by_layer else 1
+    # don't dropout classification layer if included as an alignment layer
+    classification_layer = nets[0].num_layers(all=True)-1 # index to last layer in network
+    if classification_layer in idx_dropout_layers:
+        idx_dropout_layers.pop(-1)
+        alignment.pop(-1)
+    level = parameters.get('level')
+
+    num_batches = 0
+    # retrieve requested dataloader from dataset
+    all_predictions = []
+    true_labels = []
+    dataloader = dataset.test_loader
+    for batch in tqdm(dataloader):
+        images, labels = dataset.unwrap_batch(batch)
+        num_batches += 1
+        
+        idx_high, idx_low, idx_rand = get_dropout_indices(idx_alignment, fraction)
+        for layer in range(num_layers):
+            if by_layer:
+                drop_high, drop_low, drop_rand = [idx_high[layer]], [idx_low[layer]], [idx_rand[layer]]
+                drop_layer = [idx_dropout_layers[layer]]
+            else:
+                drop_high, drop_low, drop_rand = idx_high, idx_low, idx_rand
+                drop_layer = copy(idx_dropout_layers)
+
+            if fraction != 0.0:
+                outputs_high = [net.forward_targeted_dropout(images, [drop[idx, :] for drop in drop_high], drop_layer)
+                                for idx, net in enumerate(nets)]
+                all_predictions.append(outputs_high[0][0])
+            else:
+                outputs_high = [net.forward(images)
+                                for idx, net in enumerate(nets)]
+                all_predictions.append(outputs_high[0])
+            true_labels.append(labels)
+    return all_predictions, true_labels
+               
 
 @torch.no_grad()
 @test_nets
@@ -455,4 +507,3 @@ def eigenvector_dropout(nets, dataset, eigenvalues, eigenvectors, **parameters):
     }
 
     return results
-

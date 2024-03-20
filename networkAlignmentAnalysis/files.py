@@ -18,7 +18,6 @@ def get_username():
 def local_path():
     """method for defining the local root path for datasets and results"""
     hostname = get_hostname()
-    print(hostname)
     if hostname.lower().startswith('celia'):
         hostname = 'Celia'
     hostname = hostname if hostname in PATH_REGISTRY else get_username()

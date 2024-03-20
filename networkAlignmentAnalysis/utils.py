@@ -564,5 +564,7 @@ def load_checkpoints(nets, optimizers, device, path):
 
     if device == 'cuda':
         [net.to(device) for net in nets]
+    
+    results = checkpoint
 
-    return nets, optimizers, checkpoint
+    return nets, optimizers, results
