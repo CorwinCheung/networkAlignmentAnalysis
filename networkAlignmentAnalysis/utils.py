@@ -624,7 +624,9 @@ def load_checkpoints(nets, optimizers, device, path):
     if device == "cuda":
         [net.to(device) for net in nets]
 
-    return nets, optimizers, checkpoint
+    results = checkpoint
+
+    return nets, optimizers, results
 
 
 def match_git(path):
