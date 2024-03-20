@@ -1,9 +1,9 @@
 from matplotlib.pyplot import show
 from networkAlignmentAnalysis.experiments.registry import create_experiment
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    # Create experiment 
+    # Create experiment
     exp = create_experiment()
 
     if exp.args.showprms:
@@ -24,10 +24,13 @@ if __name__ == '__main__':
         if not exp.args.nosave:
             exp.save_experiment(results)
 
+            # Save copy of repo
+            exp.save_repo()
+
             # Save networks
             if exp.args.save_networks:
                 exp.save_networks(nets)
-        
+
     else:
         # Load saved experiment (parameters and results)
         print("Loading saved experiment...")
@@ -39,11 +42,7 @@ if __name__ == '__main__':
     # Plot results unless calling script to show saved parameters
     if not exp.args.showprms:
         exp.plot(results)
-        
+
         # Show all figures at end if requested
         if exp.args.showall:
             show()
-
-    
-
-

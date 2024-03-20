@@ -1,8 +1,17 @@
 # Saved files
 *.pkl
+slurm-*.out
+*.pt
+*.mat
+
+# cluster jobs
+jobs/
 
 # VSCODE
 .vscode/
+
+# WANDB
+wandb/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

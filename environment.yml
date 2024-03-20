@@ -17,5 +17,8 @@ dependencies:
   - matplotlib
   - tqdm
   - ipykernel
+  - natsort
   - pip:
-    - tensorboard
+    - wandb
+    - black
+    - gitignore_parser
