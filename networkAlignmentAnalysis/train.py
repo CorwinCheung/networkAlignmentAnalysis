@@ -252,7 +252,7 @@ def get_dropout_indices(idx_alignment, fraction):
 @test_nets
 def dropout_analyze(nets, dataset, alignment=None, **parameters):
     """
-    returns the nets after dropping out the eigenvectors
+    returns the nets after dropping out the nodes
     Then the nets can be run through the testing and a confusion matrix and the confidence of the
     estimates can be printed out
     """
@@ -287,14 +287,35 @@ def dropout_analyze(nets, dataset, alignment=None, **parameters):
                 drop_high, drop_low, drop_rand = idx_high, idx_low, idx_rand
                 drop_layer = copy(idx_dropout_layers)
 
-            if fraction != 0.0:
-                outputs_high = [net.forward_targeted_dropout(images, [drop[idx, :] for drop in drop_high], drop_layer)
-                                for idx, net in enumerate(nets)]
-                all_predictions.append(outputs_high[0][0])
-            else:
-                outputs_high = [net.forward(images)
-                                for idx, net in enumerate(nets)]
-                all_predictions.append(outputs_high[0])
+            if level == 'high':
+                if fraction != 0.0: #prevents unwanted behavior if nothing is to be dropped out
+                    outputs_high = [net.forward_targeted_dropout(images, [drop[idx, :] for drop in drop_high], drop_layer)
+                                    for idx, net in enumerate(nets)]
+                    all_predictions.append(outputs_high[0][0])
+                else:
+                    outputs_high = [net.forward(images)
+                                    for idx, net in enumerate(nets)]
+                    all_predictions.append(outputs_high[0])
+            elif level == 'low':
+                if fraction != 0.0: #prevents unwanted behavior if nothing is to be dropped out
+                    outputs_low = [net.forward_targeted_dropout(images, [drop[idx, :] for drop in drop_low], drop_layer)
+                                    for idx, net in enumerate(nets)]
+                    all_predictions.append(outputs_low[0][0])
+                else:
+                    outputs_low = [net.forward(images)
+                                    for idx, net in enumerate(nets)]
+                    all_predictions.append(outputs_low[0])
+            elif level == 'random':
+                if fraction != 0.0: #prevents unwanted behavior if nothing is to be dropped out
+                    outputs_rand = [net.forward_targeted_dropout(images, [drop[idx, :] for drop in drop_rand], drop_layer)
+                                    for idx, net in enumerate(nets)]
+                    all_predictions.append(outputs_rand[0][0])
+                else:
+                    outputs_rand = [net.forward(images)
+                                    for idx, net in enumerate(nets)]
+                    all_predictions.append(outputs_rand[0])
+
+            
             true_labels.append(labels)
     return all_predictions, true_labels
                
