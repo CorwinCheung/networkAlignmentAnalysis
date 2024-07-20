@@ -9,6 +9,7 @@ from natsort import natsorted
 import torch
 import wandb
 from matplotlib import pyplot as plt
+import uuid
 
 from .. import files
 from ..datasets import get_dataset
@@ -22,6 +23,7 @@ class Experiment(ABC):
         self.basepath = files.results_path() / self.basename  # Register basepath of experiment
         self.get_args(args=args)  # Parse arguments to python program
         self.register_timestamp()  # Register timestamp of experiment
+        self.register_run_id()    # Register run_id of experiment
         self.run = self.configure_wandb()  # Create a wandb run object (or None depending on args.use_wandb)
         self.device = self.args.device
 
@@ -66,6 +68,22 @@ class Experiment(ABC):
             self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             if self.args.use_timestamp:
                 self.args.timestamp = self.timestamp
+    
+    def register_run_id(self) -> None:
+        """
+        Method for registering run_id.
+
+        If run_id not provided, then a random run_id is created.
+        If the run_id is provided, then that run_id is used to save the experiment under.
+        """
+        if self.args.use_run_id is not None:
+            # If use_run_id is provided but empty, generate a UUID
+            if self.args.use_run_id == "":
+                self.run_id = str(uuid.uuid4())
+            else:
+                self.run_id = self.args.use_run_id
+        else:
+            self.run_id = None
 
     def get_dir(self, create=True) -> Path:
         """
@@ -89,6 +107,10 @@ class Experiment(ABC):
         # if requested, will also use a timestamp to distinguish this run from others
         if self.args.use_timestamp:
             exp_path = exp_path / self.timestamp
+
+        # if requested, will also use a run_id to distinguish this run from others
+        if self.run_id is not None:
+            exp_path = exp_path / f"run#{self.run_id}"
 
         return exp_path
 
@@ -201,6 +223,12 @@ class Experiment(ABC):
             help="the timestamp of a previous experiment to plot or observe parameters",
         )
 
+        parser.add_argument(
+            "--use-run-id",
+            nargs='?',
+            const="",
+            help="if used, will save data in a folder named after a specific run id, or random id if not specified",
+        )
         # parse arguments (passing directly because initial parser will remove the "--experiment" argument)
         self.args = parser.parse_args(args=args)
 
